@@ -16,15 +16,18 @@ Este repositório realiza o teste automatizado de modelos de linguagem (LLMs) vi
 
 ## Estrutura de Pastas e Dados
 
-A pasta `/data` e o arquivo `.env` já estão ignorados no `.gitignore`. Organize seus arquivos da seguinte forma:
+A pasta `/data` e o arquivo `.env` estão ignorados no `.gitignore`, enquanto a pasta `results/` é mantida versionada no repositório:
 
 ```text
 .
+├── results/
+│   ├── metricas/               # Métricas consolidadas (metricas_teste.json e metricas_teste.csv)
+│   └── respostas/              # 1 arquivo por modelo (respostas_{modelo}.txt) com todas as sessões
 ├── data/
-│   ├── ontologia.ttl       # Sua ontologia em formato Turtle (.ttl)
-│   └── docs/               # Pasta com os documentos para a Sessão 2 (.pdf, .docx, .txt, .md, etc.)
-├── perguntas.txt           # Uma pergunta por linha (separadas por \n)
-├── .env                    # Sua chave OPENROUTER_API_KEY
+│   ├── capstone_insper.ttl     # Sua ontologia em formato Turtle (.ttl)
+│   └── docs/                   # Pasta com os documentos para a Sessão 2 (.pdf, .docx, .txt, .md, .csv, etc.)
+├── perguntas.txt               # Uma pergunta por linha (separadas por \n)
+├── .env                        # Sua chave OPENROUTER_API_KEY
 ├── config.py
 ├── tools_docs.py
 ├── tools_ontology.py
@@ -75,8 +78,6 @@ Opções úteis de linha de comando:
 
 ## Arquivos de Saída e Métricas
 
-Ao final da execução, são gerados:
-- `respostas_{modelo}.txt`: Arquivo consolidado do modelo contendo as 3 sessões, o tempo total, o gasto de tokens (`prompt_tokens`, `completion_tokens`, `total_tokens`) e as respostas numeradas (`1- primeira resposta\n2- segunda resposta`).
-- `respostas_{modelo}_{sessao}.txt`: Arquivo individual por sessão no formato estrito `1- primeira resposta\n2- segunda resposta` acompanhado do resumo de tokens e tempo.
-- `metricas_teste.json` e `metricas_teste.csv`: Relatórios completos com o tempo gasto e consumo de tokens por pergunta, por sessão e por modelo.
-
+Ao final da execução, os resultados são salvos na pasta `results/`:
+- `results/respostas/respostas_{modelo}.txt`: Arquivo único por modelo contendo as respostas numeradas (`1- primeira resposta\n2- segunda resposta`) das 3 sessões, além do tempo gasto e consumo de tokens (`prompt_tokens`, `completion_tokens`, `total_tokens`).
+- `results/metricas/metricas_teste.json` e `results/metricas/metricas_teste.csv`: Relatórios completos com o tempo gasto e consumo de tokens por pergunta, por sessão e por modelo.

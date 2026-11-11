@@ -5,19 +5,20 @@ import sys
 import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from openai import OpenAI
 
 from config import (
+    ANSWERS_DIR,
     DATA_DIR,
     DOCS_DIR,
     MAX_TOOL_ITERATIONS,
+    METRICS_DIR,
     MODELS,
     ONTOLOGY_FILE,
     OPENROUTER_API_KEY,
     OPENROUTER_BASE_URL,
-    OUTPUT_DIR,
     QUESTIONS_FILE,
     SYSTEM_PROMPTS,
 )
@@ -218,11 +219,11 @@ def save_model_outputs(
     model_name: str,
     model_slug: str,
     sessions_metrics: List[SessionMetrics],
-    output_dir: Path,
+    answers_dir: Path,
     single_line: bool = True,
 ) -> Path:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    consolidated_file = output_dir / f"respostas_{model_name}.txt"
+    answers_dir.mkdir(parents=True, exist_ok=True)
+    consolidated_file = answers_dir / f"respostas_{model_name}.txt"
 
     total_model_tokens = sum(s.total_tokens for s in sessions_metrics)
     total_model_time = sum(s.tempo_total_segundos for s in sessions_metrics)
@@ -244,7 +245,6 @@ def save_model_outputs(
             f"Chamadas de ferramentas: {sess_metric.total_chamadas_ferramentas}"
         )
 
-        session_answer_lines: List[str] = []
         for q_res in sess_metric.respostas:
             ans_text = (
                 format_single_line_answer(q_res.resposta)
@@ -253,34 +253,23 @@ def save_model_outputs(
             )
             line = f"{q_res.numero}- {ans_text}"
             consolidated_lines.append(line)
-            session_answer_lines.append(line)
 
         consolidated_lines.append("")
-
-        # Salva também um arquivo exclusivo da sessão com o formato estrito "1- ...\n2- ..."
-        per_session_file = output_dir / f"respostas_{model_name}_{sess_metric.sessao}.txt"
-        per_session_content = "\n".join(session_answer_lines) + (
-            f"\n\n# Resumo de Métricas ({sess_metric.sessao}): "
-            f"Tempo Total = {sess_metric.tempo_total_segundos:.2f}s | "
-            f"Tokens Totais = {sess_metric.total_tokens} "
-            f"(Prompt: {sess_metric.prompt_tokens_total}, Completion: {sess_metric.completion_tokens_total})\n"
-        )
-        per_session_file.write_text(per_session_content, encoding="utf-8")
 
     consolidated_file.write_text("\n".join(consolidated_lines), encoding="utf-8")
     return consolidated_file
 
 
-def save_global_metrics(all_metrics: List[SessionMetrics], output_dir: Path) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
+def save_global_metrics(all_metrics: List[SessionMetrics], metrics_dir: Path) -> None:
+    metrics_dir.mkdir(parents=True, exist_ok=True)
 
     # Salva JSON detalhado
-    json_path = output_dir / "metricas_teste.json"
+    json_path = metrics_dir / "metricas_teste.json"
     json_data = [asdict(m) for m in all_metrics]
     json_path.write_text(json.dumps(json_data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # Salva CSV consolidado por sessão
-    csv_path = output_dir / "metricas_teste.csv"
+    csv_path = metrics_dir / "metricas_teste.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(
@@ -324,7 +313,7 @@ def parse_args() -> argparse.Namespace:
         "--ontologia",
         type=Path,
         default=ONTOLOGY_FILE,
-        help="Caminho para o arquivo .ttl da ontologia (padrão: data/ontologia.ttl).",
+        help="Caminho para o arquivo .ttl da ontologia (padrão: data/capstone_insper.ttl).",
     )
     parser.add_argument(
         "--docs",
@@ -453,19 +442,18 @@ def main() -> None:
             model_name=model_name,
             model_slug=model_slug,
             sessions_metrics=model_sessions_metrics,
-            output_dir=OUTPUT_DIR,
+            answers_dir=ANSWERS_DIR,
             single_line=not args.multilinha,
         )
         print(f"\nRespostas do modelo '{model_name}' salvas em: {out_file}")
 
-    save_global_metrics(all_metrics, OUTPUT_DIR)
+    save_global_metrics(all_metrics, METRICS_DIR)
     print("\n============================================================")
     print("Teste finalizado! Relatórios de métricas salvos em:")
-    print(f" - {OUTPUT_DIR / 'metricas_teste.json'}")
-    print(f" - {OUTPUT_DIR / 'metricas_teste.csv'}")
+    print(f" - {METRICS_DIR / 'metricas_teste.json'}")
+    print(f" - {METRICS_DIR / 'metricas_teste.csv'}")
     print("============================================================")
 
 
 if __name__ == "__main__":
     main()
-
